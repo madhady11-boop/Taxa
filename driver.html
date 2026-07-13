@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Taxi 100 - تطبيق الكابتن</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #FF6B00;
+            --dark: #0A0E27;
+            --success: #00D97E;
+            --danger: #FF3B5C;
+            --text: #1A1D2E;
+            --text-light: #8B92A8;
+            --bg: #F8F9FC;
+            --border: #E8ECF4;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .phone-frame {
+            width: 390px;
+            height: 844px;
+            background: linear-gradient(180deg, var(--dark) 0%, #1E2749 100%);
+            border-radius: 50px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5), 0 0 0 12px #1a1a1a, 0 0 0 14px #333;
+            color: white;
+        }
+        .phone-notch {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 32px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 1000;
+        }
+        .status-bar {
+            padding: 55px 30px 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .app-content {
+            padding: 20px;
+            height: calc(100% - 90px);
+            overflow-y: auto;
+        }
+        
+        /* Header */
+        .driver-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .driver-avatar-big {
+            width: 55px; height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #FF8E3C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 900;
+        }
+        .driver-details h3 { font-size: 17px; }
+        .driver-details p { font-size: 12px; opacity: 0.6; }
+        .settings-btn {
+            width: 40px; height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        /* Online Toggle */
+        .status-card {
+            background: linear-gradient(135deg, var(--primary), #FF8E3C);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px;
+            width: 150px; height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .status-label { font-size: 14px; opacity: 0.9; }
+        .status-value { font-size: 20px; font-weight: 900; margin-top: 3px; }
+        
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 32px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .toggle-switch.on { background: var(--success); }
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 26px; height: 26px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 12px;
+        }
+        .toggle-switch.on .toggle-slider {
+            right: calc(100% - 29px);
+            color: var(--success);
+        }
+        
+        /* Earnings Grid */
+        .earnings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            position: relative;
+        }
+        .earning-box {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 15px;
+        }
+        .earning-box .label { font-size: 12px; opacity: 0.8; margin-bottom: 5px; }
+        .earning-box .value { font-size: 18px; font-weight: 900; }
+        
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .mini-stat {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px 10px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .mini-stat i {
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .mini-stat .num { font-size: 18px; font-weight: 900; }
+        .mini-stat .lbl { font-size: 10px; opacity: 0.6; }
+        
+        /* New Ride Notification */
+        .ride-request {
+            background: white;
+            color: var(--text);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(255,107,0,0.4);
+            animation: slideUp 0.5s ease, glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 10px 40px rgba(255,107,0,0.4); }
+            to { box-shadow: 0 10px 50px rgba(255,107,0,0.7); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .ride-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .ride-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .timer {
+            font-size: 14px;
+            color: var(--danger);
+            font-weight: 700;
+        }
+        .customer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .customer-info img {
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2E5BFF, #5B7FFF);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+        .customer-info .name { font-weight: 700; }
+        .customer-info .rating { font-size: 12px; color: var(--text-light); }
+        
+        .trip-details {
+            margin-bottom: 15px;
+        }
+        .trip-point {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+        .point-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+        }
+        .point-dot.pickup { background: var(--success); }
+        .point-dot.dropoff { background: var(--danger); }
+        
+        .trip-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .trip-info-item {
+            background: var(--bg);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .trip-info-item .val { font-weight: 900; color: var(--primary); }
+        .trip-info-item .lbl { font-size: 10px; color: var(--text-light); }
+        
+        .ride-actions {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 10px;
+        }
+        .btn-reject, .btn-accept {
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-reject {
+            background: var(--bg);
+            color: var(--danger);
+        }
+        .btn-accept {
+            background: linear-gradient(135deg, var(--success), #00F090);
+            color: white;
+        }
+        .btn-accept:hover { transform: translateY(-2px); }
+        
+        /* Recent Trips */
+        .section-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+        .trip-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .trip-item-info .from-to {
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .trip-item-info .time {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+        .trip-item-price {
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="status-bar">
+            <span>9:41</span>
+            <span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span>
+        </div>
+        
+        <div class="app-content">
+            <!-- Header -->
+            <div class="driver-header">
+                <div class="driver-avatar-big">ع</div>
+                <div class="driver-details" style="flex:1">
+                    <h3>علي حسن</h3>
+                    <p>⭐ 4.9 • 1,245 رحلة</p>
+                </div>
+                <button class="settings-btn"><i class="fas fa-cog"></i></button>
+            </div>
+            
+            <!-- Status Card -->
+            <div class="status-card">
+                <div class="status-header">
+                    <div>
+                        <div class="status-label">حالتك الآن</div>
+                        <div class="status-value">✅ متاح للطلبات</div>
+                    </div>
+                    <div class="toggle-switch on" onclick="this.classList.toggle('on')">
+                        <div class="toggle-slider"><i class="fas fa-check"></i></div>
+                    </div>
+                </div>
+                <div class="earnings-grid">
+                    <div class="earning-box">
+                        <div class="label">أرباح اليوم</div>
+                        <div class="value">85,000 د.ع</div>
+                    </div>
+                    <div class="earning-box">
+                        <div class="label">عدد الرحلات</div>
+                        <div class="value">12 رحلة</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="mini-stat">
+                    <i class="fas fa-clock"></i>
+                    <div class="num">6.5س</div>
+                    <div class="lbl">وقت العمل</div>
+                </div>
+                <div class="mini-stat">
+                    <i class="fas fa-road"></i>
+                    <div class="num">48كم</div>
+                    <div class="lbl">مسافة</div>
+                </div>
+                <div class="mini-stat">
+                    <i class="fas fa-star"></i>
+                    <div class="num">4.9</div>
+                    <div class="lbl">التقييم</div>
+                </div>
+            </div>
+            
+            <!-- New Ride Request -->
+            <div class="ride-request">
+                <div class="ride-header">
+                    <span class="ride-badge">🔔 طلب جديد!</span>
+                    <span class="timer">⏱️ 0:14</span>
+                </div>
+                
+                <div class="customer-info">
+                    <img alt="زبون">م</img>
+                    <div style="flex:1">
+                        <div class="name">محمد جاسم</div>
+                        <div class="rating">⭐ 4.8 • زبون جيد</div>
+                    </div>
+                </div>
+                
+                <div class="trip-details">
+                    <div class="trip-point">
+                        <div class="point-dot pickup"></div>
+                        <div>
+                            <div style="font-weight:700">شارع بغداد</div>
+                            <div style="font-size:11px; color:var(--text-light)">قريب من فلكة سماوة</div>
+                        </div>
+                    </div>
+                    <div style="border-right: 2px dashed #ccc; height: 15px; margin-right: 5px;"></div>
+                    <div class="trip-point">
+                        <div class="point-dot dropoff"></div>
+                        <div>
+                            <div style="font-weight:700">جامعة العين</div>
+                            <div style="font-size:11px; color:var(--text-light)">البوابة الرئيسية</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="trip-info-grid">
+                    <div class="trip-info-item">
+                        <div class="val">3.2 كم</div>
+                        <div class="lbl">المسافة</div>
+                    </div>
+                    <div class="trip-info-item">
+                        <div class="val">12 دقيقة</div>
+                        <div class="lbl">الوقت</div>
+                    </div>
+                    <div class="trip-info-item">
+                        <div class="val">5,000 د.ع</div>
+                        <div class="lbl">السعر</div>
+                    </div>
+                </div>
+                
+                <div class="ride-actions">
+                    <button class="btn-reject">رفض</button>
+                    <button class="btn-accept">✅ قبول الرحلة</button>
+                </div>
+            </div>
+            
+            <!-- Recent Trips -->
+            <div class="section-title">📋 آخر رحلاتك</div>
+            <div class="trip-item">
+                <div class="trip-item-info">
+                    <div class="from-to">المنصورية ← الشموخ</div>
+                    <div class="time">قبل 15 دقيقة</div>
+                </div>
+                <div class="trip-item-price">6,000 د.ع</div>
+            </div>
+            <div class="trip-item">
+                <div class="trip-item-info">
+                    <div class="from-to">كراج بغداد ← أريدو</div>
+                    <div class="time">قبل 45 دقيقة</div>
+                </div>
+                <div class="trip-item-price">5,500 د.ع</div>
+            </div>
+            <div class="trip-item">
+                <div class="trip-item-info">
+                    <div class="from-to">فلكة سماوة ← جامعة العين</div>
+                    <div class="time">قبل ساعة</div>
+                </div>
+                <div class="trip-item-price">4,000 د.ع</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
