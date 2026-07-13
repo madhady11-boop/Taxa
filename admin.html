@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة المدير - Fast Taxi 100</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #FF6B00;
+            --primary-light: #FF8E3C;
+            --dark: #0A0E27;
+            --dark-light: #1E2749;
+            --accent: #FFD60A;
+            --success: #00D97E;
+            --info: #2E5BFF;
+            --danger: #FF3B5C;
+            --bg: #F8F9FC;
+            --card: #FFFFFF;
+            --text: #1A1D2E;
+            --text-light: #8B92A8;
+            --border: #E8ECF4;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* ============ SIDEBAR ============ */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, var(--dark) 0%, var(--dark-light) 100%);
+            color: white;
+            padding: 25px 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            right: 0;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 25px;
+        }
+        .logo-icon {
+            width: 45px; height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 20px rgba(255,107,0,0.4);
+        }
+        .logo-text h2 { font-size: 18px; font-weight: 900; }
+        .logo-text p { font-size: 11px; opacity: 0.6; }
+        
+        .nav-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.5;
+            margin: 20px 0 10px;
+            padding-right: 10px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .nav-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+        }
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: 0 8px 20px rgba(255,107,0,0.3);
+        }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-item .badge {
+            margin-right: auto;
+            background: var(--danger);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        /* ============ MAIN CONTENT ============ */
+        .main {
+            flex: 1;
+            margin-right: 280px;
+            padding: 25px 30px;
+        }
+        
+        /* ============ HEADER ============ */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: var(--card);
+            padding: 18px 25px;
+            border-radius: 16px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        .header-title h1 { font-size: 22px; margin-bottom: 3px; }
+        .header-title p { color: var(--text-light); font-size: 13px; }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input {
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            width: 250px;
+            font-size: 13px;
+            background: var(--bg);
+        }
+        .search-box i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+        .icon-btn {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: var(--bg);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .icon-btn:hover { background: var(--primary); color: white; }
+        .icon-btn .notif-dot {
+            position: absolute;
+            top: 8px; left: 8px;
+            width: 8px; height: 8px;
+            background: var(--danger);
+            border-radius: 50%;
+            border: 2px solid var(--card);
+        }
+        .user-avatar {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        
+        /* ============ STATS CARDS ============ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            opacity: 0.1;
+        }
+        .stat-card.orange::before { background: var(--primary); }
+        .stat-card.green::before { background: var(--success); }
+        .stat-card.blue::before { background: var(--info); }
+        .stat-card.yellow::before { background: var(--accent); }
+        
+        .stat-icon {
+            width: 50px; height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            margin-bottom: 15px;
+        }
+        .stat-card.orange .stat-icon { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+        .stat-card.green .stat-icon { background: linear-gradient(135deg, var(--success), #00F090); }
+        .stat-card.blue .stat-icon { background: linear-gradient(135deg, var(--info), #5B7FFF); }
+        .stat-card.yellow .stat-icon { background: linear-gradient(135deg, var(--accent), #FFE55C); }
+        
+        .stat-label { font-size: 13px; color: var(--text-light); margin-bottom: 6px; }
+        .stat-value { font-size: 28px; font-weight: 900; margin-bottom: 8px; }
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+        .stat-change.up { background: rgba(0,217,126,0.1); color: var(--success); }
+        .stat-change.down { background: rgba(255,59,92,0.1); color: var(--danger); }
+        
+        /* ============ MAIN GRID ============ */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .panel {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 22px;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .panel-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .panel-title i {
+            color: var(--primary);
+            margin-left: 8px;
+        }
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        .btn-sm:hover { background: var(--bg); }
+        .btn-sm.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* ============ MAP ============ */
+        #map {
+            height: 450px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .map-legend {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: white;
+            padding: 12px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-dot {
+            width: 12px; height: 12px;
+            border-radius: 50%;
+        }
+        
+        /* ============ LIVE DRIVERS ============ */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0,217,126,0.1);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .live-dot {
+            width: 8px; height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .driver-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
+        }
+        .driver-item:hover { background: var(--bg); }
+        .driver-avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            position: relative;
+        }
+        .driver-avatar::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 12px; height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .driver-info { flex: 1; }
+        .driver-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .driver-status { font-size: 11px; color: var(--text-light); }
+        .driver-rating {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 700;
+        }
+        
+        /* ============ CHART ============ */
+        .chart-container {
+            height: 280px;
+            position: relative;
+        }
+        
+        /* ============ RECENT TRIPS TABLE ============ */
+        .table-container { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            text-align: right;
+            padding: 12px 10px;
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody td {
+            padding: 14px 10px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody tr:hover { background: var(--bg); }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-badge.completed { background: rgba(0,217,126,0.1); color: var(--success); }
+        .status-badge.ongoing { background: rgba(46,91,255,0.1); color: var(--info); }
+        .status-badge.cancelled { background: rgba(255,59,92,0.1); color: var(--danger); }
+        
+        /* ============ COVERAGE REPORT ============ */
+        .coverage-section {
+            background: linear-gradient(135deg, var(--dark), var(--dark-light));
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+        .coverage-section::before {
+            content: '';
+            position: absolute;
+            top: -50px; left: -50px;
+            width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(255,107,0,0.3), transparent);
+            border-radius: 50%;
+        }
+        .coverage-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .coverage-title { font-size: 18px; font-weight: 700; }
+        .coverage-date { font-size: 13px; opacity: 0.7; }
+        .btn-share {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-share:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,107,0,0.3); }
+        .areas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            position: relative;
+        }
+        .area-tag {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .area-tag:hover {
+            background: rgba(255,107,0,0.2);
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+        .area-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+        .area-count { font-size: 12px; opacity: 0.7; }
+        
+        /* Custom Marker */
+        .custom-marker {
+            width: 30px; height: 30px;
+            background: var(--primary);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .custom-marker i { transform: rotate(45deg); font-size: 14px; }
+        
+        .driver-marker {
+            background: var(--info);
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            border: 3px solid white;
+            box-shadow: 0 4px 15px rgba(46,91,255,0.5);
+            animation: driverPulse 2s infinite;
+        }
+        @keyframes driverPulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(46,91,255,0.5); }
+            50% { box-shadow: 0 4px 25px rgba(46,91,255,0.8); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(100%); }
+            .main { margin-right: 0; }
+            .content-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">🏍️</div>
+            <div class="logo-text">
+                <h2>Fast Taxi 100</h2>
+                <p>لوحة التحكم</p>
+            </div>
+        </div>
+        
+        <div class="nav-section-title">القائمة الرئيسية</div>
+        <a class="nav-item active"><i class="fas fa-chart-pie"></i> نظرة عامة</a>
+        <a class="nav-item"><i class="fas fa-map-marked-alt"></i> الخريطة الحية <span class="badge">12</span></a>
+        <a class="nav-item"><i class="fas fa-route"></i> الرحلات</a>
+        
+        <div class="nav-section-title">الإدارة</div>
+        <a class="nav-item"><i class="fas fa-motorcycle"></i> الكباتن</a>
+        <a class="nav-item"><i class="fas fa-users"></i> الزبائن</a>
+        <a class="nav-item"><i class="fas fa-money-bill-wave"></i> الأرباح</a>
+        
+        <div class="nav-section-title">التقارير</div>
+        <a class="nav-item"><i class="fas fa-chart-bar"></i> التحليلات</a>
+        <a class="nav-item"><i class="fas fa-map"></i> تقرير التغطية</a>
+        
+        <div class="nav-section-title">النظام</div>
+        <a class="nav-item"><i class="fas fa-cog"></i> الإعدادات</a>
+        <a class="nav-item"><i class="fas fa-tags"></i> التسعير</a>
+        <a class="nav-item"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
+    </aside>
+    
+    <!-- ============ MAIN CONTENT ============ -->
+    <main class="main">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <h1>مرحباً، أبو علي 👋</h1>
+                <p>هذه نظرة شاملة على أداء اليوم</p>
+            </div>
+            <div class="header-actions">
+                <div class="search-box">
+                    <input type="text" placeholder="ابحث عن رحلة، كابتن، زبون...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <button class="icon-btn">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-dot"></span>
+                </button>
+                <button class="icon-btn"><i class="fas fa-moon"></i></button>
+                <div class="user-avatar">أ</div>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card orange">
+                <div class="stat-icon"><i class="fas fa-route"></i></div>
+                <div class="stat-label">رحلات اليوم</div>
+                <div class="stat-value">247</div>
+                <span class="stat-change up"><i class="fas fa-arrow-up"></i> 12.5%</span>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+                <div class="stat-label">أرباح اليوم</div>
+                <div class="stat-value">1,250,000 د.ع</div>
+                <span class="stat-change up"><i class="fas fa-arrow-up"></i> 8.3%</span>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon"><i class="fas fa-motorcycle"></i></div>
+                <div class="stat-label">كباتن نشطين</div>
+                <div class="stat-value">32 / 45</div>
+                <span class="stat-change up"><i class="fas fa-arrow-up"></i> 5 كباتن جدد</span>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-icon"><i class="fas fa-star"></i></div>
+                <div class="stat-label">متوسط التقييم</div>
+                <div class="stat-value">4.8 ⭐</div>
+                <span class="stat-change up"><i class="fas fa-arrow-up"></i> 0.2</span>
+            </div>
+        </div>
+        
+        <!-- Coverage Report Section (زي صورتك!) -->
+        <div class="coverage-section">
+            <div class="coverage-header">
+                <div>
+                    <div class="coverage-title">📍 المناطق التي تمت تغطيتها بالرحلات</div>
+                    <div class="coverage-date">اليوم - الأربعاء 15 يناير 2025</div>
+                </div>
+                <button class="btn-share">
+                    <i class="fas fa-share-alt"></i>
+                    مشاركة على السوشيال ميديا
+                </button>
+            </div>
+            <div class="areas-grid" id="areasGrid"></div>
+        </div>
+        
+        <!-- Main Grid: Map + Live Drivers -->
+        <div class="content-grid">
+            <!-- Live Map -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-map-marked-alt"></i> الخريطة الحية</div>
+                    <div class="panel-actions">
+                        <button class="btn-sm active">الكل</button>
+                        <button class="btn-sm">الرحلات</button>
+                        <button class="btn-sm">الكباتن</button>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+            
+            <!-- Live Drivers -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-motorcycle"></i> الكباتن المتصلين
+                        <span class="live-badge"><span class="live-dot"></span> مباشر</span>
+                    </div>
+                </div>
+                <div id="driversList"></div>
+            </div>
+        </div>
+        
+        <!-- Charts + Recent Trips -->
+        <div class="content-grid">
+            <!-- Chart -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-line"></i> إحصائيات الأسبوع</div>
+                    <div class="panel-actions">
+                        <button class="btn-sm">يومي</button>
+                        <button class="btn-sm active">أسبوعي</button>
+                        <button class="btn-sm">شهري</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tripsChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Areas Distribution -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title"><i class="fas fa-chart-pie"></i> توزيع المناطق</div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="areasChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Trips Table -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title"><i class="fas fa-history"></i> آخر الرحلات</div>
+                <button class="btn-sm">عرض الكل</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الزبون</th>
+                            <th>الكابتن</th>
+                            <th>من</th>
+                            <th>إلى</th>
+                            <th>السعر</th>
+                            <th>الوقت</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tripsTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // ============ MAP INITIALIZATION ============
+        const map = L.map('map').setView([31.0561, 46.2575], 14); // الناصرية
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // مواقع الأماكن في الناصرية
+        const locations = [
+            { name: 'المنصورية', coords: [31.0620, 46.2450], color: '#FF6B00' },
+            { name: 'ملعب شموخ', coords: [31.0580, 46.2520], color: '#9B51E0' },
+            { name: 'شارع بغداد', coords: [31.0540, 46.2600], color: '#FFD60A' },
+            { name: 'فلكة سماوة', coords: [31.0510, 46.2650], color: '#00D97E' },
+            { name: 'جامعة العين', coords: [31.0480, 46.2700], color: '#2E5BFF' },
+            { name: 'كراج بغداد', coords: [31.0550, 46.2750], color: '#FF3B5C' },
+            { name: 'الشموخ', coords: [31.0450, 46.2600], color: '#00BCD4' },
+            { name: 'أريدو', coords: [31.0500, 46.2800], color: '#E91E63' }
+        ];
+        
+        // إضافة المواقع كنقاط
+        locations.forEach(loc => {
+            const markerIcon = L.divIcon({
+                className: 'custom-marker-wrapper',
+                html: `<div class="custom-marker" style="background:${loc.color}"><i class="fas fa-map-marker-alt"></i></div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 30]
+            });
+            L.marker(loc.coords, { icon: markerIcon })
+                .addTo(map)
+                .bindPopup(`<b>${loc.name}</b><br>${Math.floor(Math.random()*30+5)} رحلة اليوم`);
+        });
+        
+        // إضافة الكباتن المتحركين
+        const drivers = [
+            { name: 'علي حسن', coords: [31.0570, 46.2560], rating: 4.9, trips: 12, status: 'في رحلة' },
+            { name: 'أحمد محمد', coords: [31.0530, 46.2620], rating: 4.8, trips: 8, status: 'متاح' },
+            { name: 'حسين كريم', coords: [31.0490, 46.2680], rating: 5.0, trips: 15, status: 'في رحلة' },
+            { name: 'مصطفى علي', coords: [31.0600, 46.2500], rating: 4.7, trips: 6, status: 'متاح' },
+            { name: 'كرار جبار', coords: [31.0460, 46.2550], rating: 4.9, trips: 10, status: 'في رحلة' }
+        ];
+        
+        drivers.forEach(driver => {
+            const driverIcon = L.divIcon({
+                className: 'driver-marker-wrapper',
+                html: `<div class="driver-marker"><i class="fas fa-motorcycle"></i></div>`,
+                iconSize: [35, 35],
+                iconAnchor: [17, 17]
+            });
+            L.marker(driver.coords, { icon: driverIcon })
+                .addTo(map)
+                .bindPopup(`<b>${driver.name}</b><br>⭐ ${driver.rating} | ${driver.trips} رحلة`);
+        });
+        
+        // رسم مسارات الرحلات
+        const routes = [
+            { points: [[31.0620, 46.2450], [31.0580, 46.2520], [31.0540, 46.2600]], color: '#FF6B00' },
+            { points: [[31.0540, 46.2600], [31.0510, 46.2650], [31.0480, 46.2700]], color: '#9B51E0' },
+            { points: [[31.0550, 46.2750], [31.0500, 46.2800], [31.0450, 46.2600]], color: '#00D97E' }
+        ];
+        
+        routes.forEach(route => {
+            L.polyline(route.points, {
+                color: route.color,
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 5'
+            }).addTo(map);
+        });
+        
+        // Map Legend
+        const legend = L.control({ position: 'bottomright' });
+        legend.onAdd = function() {
+            const div = L.DomUtil.create('div', 'map-legend');
+            div.innerHTML = `
+                <div class="legend-item"><span class="legend-dot" style="background:#FF6B00"></span> المنصورية</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#9B51E0"></span> ملعب شموخ</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#00D97E"></span> فرع التقاعد</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#2E5BFF"></span> الكباتن النشطين</div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+        
+        // ============ AREAS COVERAGE ============
+        const areas = [
+            { name: 'المنصورية', count: 24 },
+            { name: 'ملعب شموخ', count: 18 },
+            { name: 'شارع بغداد', count: 32 },
+            { name: 'فلكة سماوة', count: 21 },
+            { name: 'جامعة العين', count: 15 },
+            { name: 'أريدو', count: 12 },
+            { name: 'كراج بغداد', count: 28 },
+            { name: 'فرع التقاعد', count: 9 },
+            { name: 'معمل المرور', count: 14 },
+            { name: 'الثورة', count: 19 },
+            { name: 'الشموخ', count: 22 },
+            { name: 'عمل النرور', count: 11 }
+        ];
+        
+        const areasGrid = document.getElementById('areasGrid');
+        areas.forEach(area => {
+            areasGrid.innerHTML += `
+                <div class="area-tag">
+                    <div class="area-name">${area.name}</div>
+                    <div class="area-count">${area.count} رحلة</div>
+                </div>
+            `;
+        });
+        
+        // ============ DRIVERS LIST ============
+        const driversList = document.getElementById('driversList');
+        drivers.forEach(driver => {
+            const initial = driver.name.charAt(0);
+            driversList.innerHTML += `
+                <div class="driver-item">
+                    <div class="driver-avatar">${initial}</div>
+                    <div class="driver-info">
+                        <div class="driver-name">${driver.name}</div>
+                        <div class="driver-status">${driver.status} • ${driver.trips} رحلة اليوم</div>
+                    </div>
+                    <div class="driver-rating">
+                        <i class="fas fa-star"></i> ${driver.rating}
+                    </div>
+                </div>
+            `;
+        });
+        
+        // ============ CHARTS ============
+        // Trips Chart
+        new Chart(document.getElementById('tripsChart'), {
+            type: 'line',
+            data: {
+                labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+                datasets: [{
+                    label: 'الرحلات',
+                    data: [180, 210, 195, 240, 247, 280, 310],
+                    borderColor: '#FF6B00',
+                    backgroundColor: 'rgba(255,107,0,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3
+                }, {
+                    label: 'الأرباح (بالآلاف)',
+                    data: [900, 1050, 980, 1200, 1250, 1400, 1550],
+                    borderColor: '#00D97E',
+                    backgroundColor: 'rgba(0,217,126,0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo' } } } }
+            }
+        });
+        
+        // Areas Chart
+        new Chart(document.getElementById('areasChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['شارع بغداد', 'كراج بغداد', 'المنصورية', 'الشموخ', 'أخرى'],
+                datasets: [{
+                    data: [32, 28, 24, 22, 45],
+                    backgroundColor: ['#FF6B00', '#9B51E0', '#00D97E', '#2E5BFF', '#FFD60A']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo' }, padding: 15 } } }
+            }
+        });
+        
+        // ============ TRIPS TABLE ============
+        const trips = [
+            { id: 1247, customer: 'محمد جاسم', driver: 'علي حسن', from: 'المنصورية', to: 'شارع بغداد', price: '5,000', time: 'قبل دقيقتين', status: 'ongoing' },
+            { id: 1246, customer: 'فاطمة أحمد', driver: 'حسين كريم', from: 'جامعة العين', to: 'الشموخ', price: '4,000', time: 'قبل 5 دقائق', status: 'completed' },
+            { id: 1245, customer: 'كريم عبد الله', driver: 'أحمد محمد', from: 'كراج بغداد', to: 'أريدو', price: '6,000', time: 'قبل 12 دقيقة', status: 'completed' },
+            { id: 1244, customer: 'زينب محمد', driver: 'مصطفى علي', from: 'ملعب شموخ', to: 'فلكة سماوة', price: '3,500', time: 'قبل 20 دقيقة', status: 'completed' },
+            { id: 1243, customer: 'حيدر علي', driver: '-', from: 'الثورة', to: 'معمل المرور', price: '4,500', time: 'قبل 25 دقيقة', status: 'cancelled' }
+        ];
+        
+        const tripsTable = document.getElementById('tripsTable');
+        trips.forEach(trip => {
+            const statusText = { completed: 'مكتملة', ongoing: 'جارية', cancelled: 'ملغاة' };
+            tripsTable.innerHTML += `
+                <tr>
+                    <td>#${trip.id}</td>
+                    <td>${trip.customer}</td>
+                    <td>${trip.driver}</td>
+                    <td>${trip.from}</td>
+                    <td>${trip.to}</td>
+                    <td><b>${trip.price} د.ع</b></td>
+                    <td>${trip.time}</td>
+                    <td><span class="status-badge ${trip.status}">${statusText[trip.status]}</span></td>
+                </tr>
+            `;
+        });
+        
+        // ============ NAVIGATION ============
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
